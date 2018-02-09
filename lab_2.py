@@ -18,10 +18,6 @@ def check_sat(clause, assignment):
     return 0
 
 
-def bit_not(bit):
-    return '1' if bit == '0' else '0'
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='SATMAX genetic algorithm.')
     parser.add_argument('-question', help='Question number', type=int, required=True)
