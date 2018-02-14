@@ -1,6 +1,7 @@
 import time
 import random
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 class MaxSatGeneticAlgorithm(object):
@@ -15,6 +16,7 @@ class MaxSatGeneticAlgorithm(object):
         self.start_time = 0
 
         self.current_pop = None
+        self.cum_norm_fitness = None
         self.current_pop_fitness = None
 
     def generate_initial_population(self):
@@ -28,16 +30,23 @@ class MaxSatGeneticAlgorithm(object):
             self.current_pop = np.append(self.current_pop, bits)
             self.current_pop_fitness = np.append(self.current_pop_fitness,
                                                  self.max_sat_instance.count_sat_clauses(bits))
+            self.compute_cum_norm_fit()
 
-    def best_fit(self):
-        max_idx = np.argmax(self.current_pop_fitness)
-        return self.current_pop_fitness[max_idx], self.current_pop[max_idx]
+    def best_two_fit(self):
+        max_idx = np.argpartition(self.current_pop_fitness, -2)[-2:]
+        # max_idx = np.argmax(self.current_pop_fitness)
+        return self.current_pop_fitness[max_idx[1]], self.current_pop[max_idx[1]], \
+               self.current_pop_fitness[max_idx[0]], \
+               self.current_pop[max_idx[0]]
 
     def mutate(self, bits_x):
+        # if random.uniform(0, 1) > 0.9:
+        #     return bits_x
         mutation_rate = self.mutation_rate / self.ind_size
         y = ''
+        # mutation_rate = 0.5
         for bit in bits_x:
-            prob = random.uniform(1, 0)
+            prob = random.uniform(0, 1)
             y += self.bit_not(bit) if prob < mutation_rate else bit
         return y
 
@@ -56,43 +65,76 @@ class MaxSatGeneticAlgorithm(object):
 
         return z
 
+    def fitness_proportional_selection(self):
+        prob = random.uniform(0, 1)
+        for i in range(self.pop_size):
+            if self.cum_norm_fitness[i] > prob:
+                return self.current_pop[i]
+
+    def uniform_crossover(self, bits_x, bits_y):
+        child = ''
+        for i in range(self.ind_size):
+            child += bits_x[i] if random.uniform(0, 1) < 0.5 else bits_y[i]
+        return child
+
+    def compute_cum_norm_fit(self):
+        fit_sum = np.sum(self.current_pop_fitness)
+        norm_fit = self.current_pop_fitness / fit_sum
+        self.cum_norm_fitness = np.cumsum(norm_fit)
+
     def run_ga(self):
         t = 0
         fbest = 0
         xbest = ''
+        fit = []
         generations = 0
-        max_fit = 0
 
         self.generate_initial_population()
-
         self.start_time = time.time()
 
         while True:
-            fbest, xbest = self.best_fit()
+            fbest, xbest, second_best_fit, second_best_x = self.best_two_fit()
 
             if time.time() - self.start_time > self.time_limit:
                 break
 
+            if fbest == self.max_sat_instance.num_clauses:
+                break
+
             new_pop = np.array([])
             new_pop_fitness = np.array([])
-            for i in range(self.pop_size):
+
+            new_pop = np.append(new_pop, xbest)
+            new_pop = np.append(new_pop, second_best_x)
+
+            new_pop_fitness = np.append(new_pop_fitness, fbest)
+            new_pop_fitness = np.append(new_pop_fitness, second_best_fit)
+
+            while len(new_pop) < self.pop_size:
                 x = self.tournament_selection()
                 y = self.tournament_selection()
 
-                new_individual = self.crossover_operator(
+                # x = self.fitness_proportional_selection()
+                # y = self.fitness_proportional_selection()
+
+                new_individual = self.uniform_crossover(
                     self.mutate(x),
                     self.mutate(y)
                 )
+                #
+                # new_individual = self.mutate(self.uniform_crossover(x, y))
+
                 new_pop = np.append(new_pop, new_individual)
                 new_pop_fitness = np.append(new_pop_fitness, self.max_sat_instance.count_sat_clauses(new_individual))
-
             self.current_pop = new_pop
             self.current_pop_fitness = new_pop_fitness
+            self.compute_cum_norm_fit()
             generations += 1
-            print(fbest)
-            if max_fit < fbest:
-                max_fit = fbest
-        # print('Max Fit: {}'.format(max_fit))
+            fit.append(fbest)
+            # print(fbest)
+
+        plt.plot(fit)
+        plt.show()
         return generations * self.pop_size, fbest, xbest
 
     @staticmethod

@@ -27,7 +27,7 @@ if __name__ == '__main__':
         max_sat.load_clauses(args.wdimacs)
         print('Clauses loaded...')
 
-        genetic_alg = MaxSatGeneticAlgorithm(pop_size=20, tourn_size=4, mutation_rate=0.6, time_limit=args.time_budget,
+        genetic_alg = MaxSatGeneticAlgorithm(pop_size=20, tourn_size=4, mutation_rate=1.5, time_limit=args.time_budget,
                                              max_sat_instance=max_sat)
         for i in range(args.repetitions):
             start_time = time.time()
