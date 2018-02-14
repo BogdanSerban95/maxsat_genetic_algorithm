@@ -1,8 +1,5 @@
-import math
-import numpy as np
-import sys, argparse
+import argparse
 import time
-import random
 from maxsat_clause import MaxSatClause, MaxSat
 
 if __name__ == '__main__':
