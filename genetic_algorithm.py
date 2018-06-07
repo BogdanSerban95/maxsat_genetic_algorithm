@@ -95,8 +95,8 @@ class MaxSatGeneticAlgorithm(object):
         while True:
             fbest, xbest, second_best_fit, second_best_x = self.best_two_fit()
 
-            if time.time() - self.start_time > self.time_limit:
-                break
+            # if time.time() - self.start_time > self.time_limit:
+            #     break
 
             if fbest == self.max_sat_instance.num_clauses:
                 break
@@ -131,7 +131,8 @@ class MaxSatGeneticAlgorithm(object):
             self.compute_cum_norm_fit()
             generations += 1
             fit.append(fbest)
-            # print(fbest)
+            if generations % 100 == 0:
+                print("Generation: {}, Best fitness: {}".format(generations, fbest))
 
         plt.plot(fit)
         plt.show()
